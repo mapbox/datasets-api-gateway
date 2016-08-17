@@ -1,0 +1,6 @@
+{
+  "name": "Datasets API Gateway",
+  "description": "A gateway server for handling Datasets API requests",
+  "repository": "https://github.com/mapbox/dataset-api-gateway",
+  "keywords": ["node", "express", "static", "mapbox"]
+}

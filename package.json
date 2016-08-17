@@ -1,0 +1,29 @@
+{
+  "name": "dataset-api-gateway",
+  "version": "1.0.0",
+  "description": "An example server application for handling requests to the Datasets API",
+  "main": "index.js",
+  "dependencies": {
+    "body-parser": "^1.15.2",
+    "express": "^4.14.0",
+    "mapbox": "^1.0.0-beta3"
+  },
+  "devDependencies": {
+    "supertest": "^2.0.0",
+    "tap": "^6.3.2"
+  },
+  "scripts": {
+    "test": "tap test/*.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mapbox/dataset-api-gateway.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/mapbox/dataset-api-gateway/issues"
+  },
+  "homepage": "https://github.com/mapbox/dataset-api-gateway#readme"
+}
