@@ -1,16 +1,51 @@
+var requiredEnv = ['MapboxAccessToken', 'MapboxDatasetID'];
+
+if (process.env.JWT_REQUIRED_FOR) {
+  requiredEnv.push('JWT_SECRET', 'JWT_AUDIENCE');
+}
+
+requiredEnv.forEach(function (envVar) {
+  if (!process.env[envVar]) throw new Error(envVar + ' environment variable required');
+});
+
 var MapboxClient = require('mapbox');
 var express = require('express');
 var bodyParser = require('body-parser');
 var MapboxClient = require('mapbox');
+var jwt = require('express-jwt');
+
 var app = express();
 
 app.set('port', (process.env.PORT || 5000));
 app.use(bodyParser.json());
 
 var client = new MapboxClient(process.env.MapboxAccessToken);
-if (!process.env.MapboxDatasetID) throw new Error('MapboxDatasetID environment variable required');
 
-app.get('/features', function (req, res) {
+var authenticateRead = authenticateWrite = function(err, req, res, next) {
+  next();
+};
+
+if (process.env.JWT_REQUIRED_FOR) {
+
+  var valid = { read: true, write: true };
+
+  var requiresAuth = process.env.JWT_REQUIRED_FOR.split(',').reduce(function (memo, type) {
+    if (!valid[type]) throw new Error('Unexpected authentication requirement ' + type);
+    memo[type] = true;
+    return memo;
+  }, {});
+
+  var authenticateWrite = jwt({
+    secret: new Buffer(process.env.JWT_SECRET),
+    audience: process.env.JWT_AUDIENCE
+  });
+
+  if (!requiresAuth.read) {
+    authenticateRead = authenticateWrite;
+  }
+}
+
+app.get('/features', authenticateRead, function (req, res) {
   client.listFeatures(process.env.MapboxDatasetID, {}, function(err, collection) {
 
     if (err) return res.status(500);
@@ -19,7 +54,7 @@ app.get('/features', function (req, res) {
   });
 });
 
-app.get('/features/:featureID', function (req, res) {
+app.get('/features/:featureID', authenticateRead, function (req, res) {
   client.readFeature(req.param.featureID, process.env.MapboxDatasetID, function(err, collection) {
 
     if (err) return res.status(500);
@@ -28,7 +63,7 @@ app.get('/features/:featureID', function (req, res) {
   });
 });
 
-app.delete('/features/:featureID', function (req, res) {
+app.delete('/features/:featureID', authenticateWrite, function (req, res) {
   client.deleteFeature(req.param.featureID, process.env.MapboxDatasetID, function(err, collection) {
 
     if (err) return res.status(500);
@@ -37,13 +72,19 @@ app.delete('/features/:featureID', function (req, res) {
   });
 });
 
-app.put('/features/:featureID', function (req, res) {
+app.put('/features/:featureID', authenticateWrite, function (req, res) {
   client.insertFeature(req.body, process.env.MapboxDatasetID, function(err, collection) {
 
     if (err) return res.status(500);
     res.json(collection);
 
   });
+});
+
+app.get('/', function (req, res) {
+
+  res.send('Hello world');
+
 });
 
 app.listen(app.get('port'), function() {
