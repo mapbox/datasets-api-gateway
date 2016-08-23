@@ -1,13 +1,17 @@
+/*
+ * Check environment variables and fail early if they're missing.
+ */
 var requiredEnv = ['MapboxAccessToken', 'MapboxDatasetID'];
-
 if (process.env.JWT_REQUIRED_FOR) {
   requiredEnv.push('JWT_SECRET', 'JWT_AUDIENCE');
 }
-
 requiredEnv.forEach(function (envVar) {
   if (!process.env[envVar]) throw new Error(envVar + ' environment variable required');
 });
 
+/*
+ * Import dependencies
+ */
 var MapboxClient = require('mapbox');
 var express = require('express');
 var bodyParser = require('body-parser');
@@ -15,12 +19,16 @@ var MapboxClient = require('mapbox');
 var jwt = require('express-jwt');
 
 var app = express();
+var client = new MapboxClient(process.env.MapboxAccessToken);
 
 app.set('port', (process.env.PORT || 5000));
 app.use(bodyParser.json());
 
-var client = new MapboxClient(process.env.MapboxAccessToken);
-
+/*
+ * Configure permissions. By default, completely open but if the JWT_REQUIRED_FOR
+ * variable and JWT details are given, read and potentially write can require
+ * a token.
+ */
 var authenticateRead = authenticateWrite = function(err, req, res, next) {
   next();
 };
@@ -44,6 +52,10 @@ if (process.env.JWT_REQUIRED_FOR) {
     authenticateRead = authenticateWrite;
   }
 }
+
+/*
+ * Configure routes for modifying features
+ */
 
 app.get('/features', authenticateRead, function (req, res) {
   client.listFeatures(process.env.MapboxDatasetID, {}, function(err, collection) {
