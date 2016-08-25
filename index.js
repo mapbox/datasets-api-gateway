@@ -9,6 +9,7 @@ requiredEnv.forEach(function (envVar) {
   if (!process.env[envVar]) throw new Error(envVar + ' environment variable required');
 });
 
+
 /*
  * Import dependencies
  */
@@ -44,11 +45,11 @@ if (process.env.JWT_REQUIRED_FOR) {
   }, {});
 
   var authenticateWrite = jwt({
-    secret: new Buffer(process.env.JWT_SECRET),
+    secret: new Buffer(process.env.JWT_SECRET, 'base64'),
     audience: process.env.JWT_AUDIENCE
   });
 
-  if (!requiresAuth.read) {
+  if (requiresAuth.read) {
     authenticateRead = authenticateWrite;
   }
 }
@@ -58,6 +59,7 @@ if (process.env.JWT_REQUIRED_FOR) {
  */
 
 app.get('/features', authenticateRead, function (req, res) {
+
   client.listFeatures(process.env.MapboxDatasetID, {}, function(err, collection) {
 
     if (err) return res.status(500);
